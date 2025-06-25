@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import pandas as pd
 import geopandas as gpd
 import joblib
@@ -15,11 +16,15 @@ st.set_page_config(
     layout="wide"
 )
 
+
+Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
+path_shapefile = os.path.join(Prediction_inondation, "data", "Secteurs_Ouaga.shp")
+path_metadata = os.path.join(Prediction_inondation, "data", "donnee_statique.csv")
+path_modele = os.path.join(Prediction_inondation, "model_inondation.pkl")
 # --- 1. Charger le bundle (pipelines, seuils, confiance, ordre des variables) ---
 @st.cache_data
 def load_model_bundle():
-    path = "model_inondation.pkl"  # Chemin relatif, fonctionne sur Streamlit Cloud
-    bundle = joblib.load(path)
+    bundle = joblib.load(path_modele)
     return bundle['pipelines'], bundle['seuils'], bundle.get('niveau_confiance', None), bundle['feature_names']
 
 pipelines_final, seuils_dict, niveau_confiance, feature_order = load_model_bundle()
@@ -28,20 +33,18 @@ seuil_fusion = seuils_dict.get('Fusion', None)
 # --- 2. Charger la carte des secteurs et les métadonnées ---
 @st.cache_data
 def load_shapefile():
-    path = r"D:\MEMORY\Prediction_inondation\data\Secteurs_Ouaga.shp"
-    gdf = gpd.read_file(path)
+    gdf = gpd.read_file(path_shapefile)
     gdf.columns = gdf.columns.str.strip()
     if "SECTEUR" in gdf.columns:
         gdf = gdf.rename(columns={"SECTEUR": "Secteur"})
     return gdf.to_crs(epsg=32630)
 
+#---- 3. Charger le fichier csv
 @st.cache_data
 def load_metadata():
-    path = r"D:\MEMORY\Prediction_inondation\data\donnee_statique.csv"
-    df = pd.read_csv(path, sep=';')
+    df = pd.read_csv(path_metadata, sep=';')
     df.columns = df.columns.str.strip()
     return df
-
 
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
