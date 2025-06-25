@@ -1,0 +1,7 @@
+streamlit
+pandas
+geopandas
+joblib
+matplotlib
+numpy
+matplotlib-scalebar
