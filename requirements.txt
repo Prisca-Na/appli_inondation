@@ -5,4 +5,5 @@ geopandas
 joblib
 matplotlib
 numpy
+imbalanced-learn
 matplotlib-scalebar
