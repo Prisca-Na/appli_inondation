@@ -18,7 +18,7 @@ st.set_page_config(
 # --- 1. Charger le bundle (pipelines, seuils, confiance, ordre des variables) ---
 @st.cache_data
 def load_model_bundle():
-    path = r"D:\MEMORY\Prediction_inondation\model_inondation.pkl"
+    path = "model_inondation.pkl"  # Chemin relatif, fonctionne sur Streamlit Cloud
     bundle = joblib.load(path)
     return bundle['pipelines'], bundle['seuils'], bundle.get('niveau_confiance', None), bundle['feature_names']
 
