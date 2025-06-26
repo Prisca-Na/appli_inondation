@@ -55,11 +55,10 @@ col_inputs, col_map = st.columns([1, 3])
 
 with col_inputs:
     st.subheader("Paramètres d'entrée")
-    precipitation = st.number_input("Précipitation (mm)", min_value=0.0, step=0.1, value=10.0)
-    annee = st.number_input("Année", min_value=1980, max_value=2050, value=2024)
-    mois = st.selectbox("Mois", list(range(1, 13)), index=6)
-    jour = st.selectbox("Jour", list(range(1, 32)), index=14)
-
+    precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 10.0, step=0.1)
+    annee = st.number_input("Année", 1980, 2050, 2024)
+    mois = st.selectbox("Mois", list(range(1,13)), index=6)
+    jour = st.selectbox("Jour", list(range(1,32)), index=14)
 
     secteurs_list = sorted(gdf_sectors["Secteur"].unique())
     options = ["Tous les secteurs"] + secteurs_list
@@ -71,7 +70,7 @@ with col_inputs:
 
     humidites = {}
     for sec in selected_secteurs:
-        humidites[sec] = st.slider(f"Humidité sol secteur {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}")
+        humidites[sec] = st.slider(f"Humidité du sol {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}")
 
 with col_map:
     placeholder_map = st.empty()
@@ -104,14 +103,14 @@ with col_map:
         df_full["Probabilité globale d'inondation"] = p_fusion = arr.mean(axis=1)
         # Confiance proxy
         stds = np.std(arr, axis=1)
-        df_full["Niveau de confiance individuel"] = 1 - stds
+        df_full["Confiance_proxy"] = 1 - stds
 
         # Affichage résultats individuels
         with col_inputs:
             st.subheader("Résultats par secteur")
             for _, r in df_full.iterrows():
                 sec = int(r["Secteur"])
-                st.write(f"- Secteur {sec}: Prob={r['Probabilité globale d'inondation']:.3f}, Confiance={r['Niveau de confiance individuel']:.3f}")
+                st.write(f"- Secteur {sec}: Prob={r['Probabilité globale d'inondation']:.3f}, Confiance={r['Confiance_proxy']:.3f}")
 
         # Carte
         gdf_plot = gdf_sectors.merge(
@@ -139,19 +138,32 @@ with col_map:
                     arrowprops=dict(facecolor='black', width=4, headwidth=10),
                     ha='center', va='center', fontsize=14, fontweight='bold')
         ax.set_xticks([]); ax.set_yticks([])
-        # Confiance globale moyenne
-        conf_globale = df_full['Niveau de confiance individuel'].mean()
-        ax.text(0.01, 0.99, f"Niveau de Confiance moyenne: {conf_globale:.3f}", transform=ax.transAxes,
+                # Confiance globale moyenne
+        conf_globale = df_full['Confiance_proxy'].mean()
+        ax.text(0.01, 0.99, f"Niveau de confiance global: {conf_globale:.3f}", transform=ax.transAxes,
                 ha='left', va='top', fontsize=10, bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
-        # Affichage de la confiance individuelle dans un expander
+        
+        # Colorbar
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="4%", pad=0.02)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm, cax=cax)
+        placeholder_map.pyplot(fig)
+
+        # Expander pour le niveau de confiance individuel
         with st.expander("Niveau de confiance individuel"):
             for _, r in df_full.iterrows():
                 sec = int(r["Secteur"])
-                conf = r["Niveau de confiance individuel"]
-                st.write(f"Secteur {sec} : {conf:.3f}")
-        
-        # Colorbar
-        divider = make_axes_locatable(ax)(fig)
+                st.write(f"Secteur {sec} : {r['Confiance_proxy']:.3f}")
+        divider = make_axes_locatable(ax)
+        cax = divider.append_axes("right", size="4%", pad=0.02)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        fig.colorbar(sm, cax=cax)
+        placeholder_map.pyplot(fig)
 
         # Bouton téléchargement CSV
         csv = df_full.drop(columns=['Prediction'], errors='ignore')
