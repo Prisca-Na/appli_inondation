@@ -52,6 +52,7 @@ gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
 
 st.title("🌧️ Prévision des Inondations à Ouagadougou")
+
 # --- Interface en deux colonnes ---
 col_inputs, col_map = st.columns([1, 3])
 
@@ -71,7 +72,7 @@ with col_inputs:
     humidites = {}
     if selected_secteurs:
         for sec in selected_secteurs:
-            humidites[sec] = st.slider(f"Humidité du sol {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}")
+            humidites[sec] = st.slider(f"Humidité du sol Secteur {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}")
 
     # Paramètres météorologiques
     precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 10.0, step=0.1)
