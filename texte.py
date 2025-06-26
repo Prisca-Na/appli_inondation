@@ -77,13 +77,13 @@ with col_inputs:
             f"Humidité du sol  {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}"
         )
 
-# Calcul et affichage
+# ---- Colonne de droite: bouton, résultats et carte ----
 with col_map:
-    # placeholder pour bouton ou message
-    action_placeholder = st.empty()
-    if action_placeholder.button("Calculer la probabilité d'inondation"):
-        # une fois cliqué, remplacer le bouton
-        action_placeholder.empty()
+    # Bouton Calculer (placeholder pour le faire disparaître)
+    calc_ph = st.empty()
+    if calc_ph.button("Calculer la probabilité d'inondation"):
+        # faire disparaître le bouton
+        calc_ph.empty()
 
         # Préparation des données
         df_sel = pd.DataFrame({"Secteur": selected_secteurs})
@@ -112,18 +112,17 @@ with col_map:
         df_full["Probabilité globale d'inondation"] = p_fusion = arr.mean(axis=1)
         df_full["Confiance_proxy"] = 1 - np.std(arr, axis=1)
 
-        # Expander pour afficher prob et confiance
-        with st.expander("Probabilité globale et niveau de confiance individuel"):
-            st.write("### Détails par secteur")
+        # Expander: probabilité & confiance
+        with st.expander("Probabilité globale et niveau de confiance individuel", expanded=True):
             for _, r in df_full.iterrows():
                 sec = int(r["Secteur"])
                 prob = r["Probabilité globale d'inondation"]
                 conf = r["Confiance_proxy"]
-                st.write(f"- Secteur {sec}: Prob={prob:.3f}, Confiance={conf:.3f}")
+                st.write(f"Secteur {sec}: Prob={prob:.3f}, Confiance={conf:.3f}")
 
         # Carte
         gdf_plot = gdf_sectors.merge(
-            df_full[["Secteur","Probabilité globale d'inondation"]], how="left", on="Secteur"
+            df_full[["Secteur","Probabilité globale d'inondation"]], on="Secteur", how="left"
         ).fillna({"Probabilité globale d'inondation": 0})
         cmap = LinearSegmentedColormap.from_list("risk", ["green","yellow","orange","red"])
         vmin, vmax = 0.0, 1.0
@@ -141,47 +140,38 @@ with col_map:
                     x, y, str(int(rr["Secteur"])), ha='center', va='center', fontsize=7,
                     path_effects=[path_effects.withStroke(linewidth=1, foreground='white')]
                 )
-        # nord et échelle
+        # Nord & échelle
         sb = ScaleBar(1, units="m", location='lower right', length_fraction=0.2,
                       pad=-0.35, box_color='white', box_alpha=0.7, font_properties={'size': 8})
         ax.add_artist(sb)
-        bounds = gdf_plot.total_bounds
-        x_arrow, y_arrow = bounds[2]-500, bounds[3]-1000
-        ax.annotate('N', xy=(x_arrow,y_arrow), xytext=(x_arrow,y_arrow-0.00005),
-                    arrowprops=dict(facecolor='black', width=4, headwidth=10),
-                    ha='center', va='center', fontsize=14, fontweight='bold')
+        bts = gdf_plot.total_bounds
+        ax.annotate('N', xy=(bts[2]-500,bts[3]-1000), xytext=(bts[2]-500,bts[3]-1000-0.00005),
+                    arrowprops=dict(facecolor='black', width=4, headwidth=10), ha='center', va='center',
+                    fontsize=14, fontweight='bold')
         ax.set_xticks([]); ax.set_yticks([])
-        # confiance globale moyenne
-        conf_globale = df_full['Confiance_proxy'].mean()
-        ax.text(0.01, 0.99, f"Niveau de confiance global: {conf_globale:.3f}", transform=ax.transAxes,
-                ha='left', va='top', fontsize=10,
-                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
+        # Confiance globale moyenne
+        cg = df_full['Confiance_proxy'].mean()
+        ax.text(0.01,0.99,f"Confiance moyenne: {cg:.3f}", transform=ax.transAxes,
+                ha='left', va='top', fontsize=10, bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
 
         # Colorbar
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size="4%", pad=0.02)
+        div = make_axes_locatable(ax)
+        cax = div.append_axes("right", size="4%", pad=0.02)
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
-        sm.set_array([])
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm); sm.set_array([])
         fig.colorbar(sm, cax=cax)
 
-        # Affichage et téléchargement
+        # Affichage carte
         col_map.pyplot(fig)
-        buf = BytesIO()
-        fig.savefig(buf, format='png', dpi=150)
-        buf.seek(0)
-        st.download_button(
-            "📷 Télécharger la carte",
-            data=buf,
-            file_name="carte_inondation.png",
-            mime="image/png"
-        )
-        csv = df_full.drop(columns=['Prediction'], errors='ignore')
+        # Télécharger carte
+        buf = BytesIO(); fig.savefig(buf, format='png', dpi=150); buf.seek(0)
+        st.download_button("📷 Télécharger la carte", data=buf, file_name="carte.png", mime="image/png")
+        # Télécharger CSV
         st.download_button(
             "📅 Télécharger les résultats",
-            data=csv.to_csv(index=False).encode('utf-8-sig'),
-            file_name="resultats_inondation.csv",
-            mime='text/csv'
+            data=df_full.to_csv(index=False).encode('utf-8-sig'),
+            file_name="resultats.csv", mime='text/csv'
         )
-    else:
-        action_placeholder.info("Cliquez sur 'Calculer' pour générer les résultats et la carte.")
+    # sinon afficher bouton
+    elif calc_ph := st.empty():
+        calc_ph.button("Calculer la probabilité d'inondation")
