@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.patheffects as path_effects
 from matplotlib_scalebar.scalebar import ScaleBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from io import BytesIO
+
 
 st.set_page_config(
     page_title="🌧️ Prévision des Inondations à Ouagadougou",
@@ -68,17 +70,21 @@ with col_inputs:
     else:
         selected_secteurs = selection
 
-    # Sliders humidité
+    # Sliders humidité pour chaque secteur sélectionné
     humidites = {}
     for sec in selected_secteurs:
         humidites[sec] = st.slider(
-            f"Humidité sol secteur {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}"
+            f"Humidité du sol  {sec}", 0.0, 1.0, 0.5, key=f"h_{sec}"
         )
 
 # Calcul et affichage
 with col_map:
-    placeholder_map = st.empty()
-    if st.button("Calculer la probabilité d'inondation"):
+    # placeholder pour bouton ou message
+    action_placeholder = st.empty()
+    if action_placeholder.button("Calculer la probabilité d'inondation"):
+        # une fois cliqué, remplacer le bouton
+        action_placeholder.empty()
+
         # Préparation des données
         df_sel = pd.DataFrame({"Secteur": selected_secteurs})
         df_full = df_sel.merge(df_metadata, on="Secteur", how="left")
@@ -104,22 +110,20 @@ with col_map:
             probas.append(p)
         arr = np.column_stack(probas)
         df_full["Probabilité globale d'inondation"] = p_fusion = arr.mean(axis=1)
-        # Confiance proxy
-        stds = np.std(arr, axis=1)
-        df_full["Confiance_proxy"] = 1 - stds
+        df_full["Confiance_proxy"] = 1 - np.std(arr, axis=1)
 
-        # Affichage dans expander
+        # Expander pour afficher prob et confiance
         with st.expander("Probabilité globale et niveau de confiance individuel"):
+            st.write("### Détails par secteur")
             for _, r in df_full.iterrows():
                 sec = int(r["Secteur"])
                 prob = r["Probabilité globale d'inondation"]
                 conf = r["Confiance_proxy"]
-                st.write(f"Secteur {sec} : Prob={prob:.3f}, Confiance={conf:.3f}")
+                st.write(f"- Secteur {sec}: Prob={prob:.3f}, Confiance={conf:.3f}")
 
         # Carte
         gdf_plot = gdf_sectors.merge(
-            df_full[["Secteur","Probabilité globale d'inondation"]],
-            on="Secteur", how="left"
+            df_full[["Secteur","Probabilité globale d'inondation"]], how="left", on="Secteur"
         ).fillna({"Probabilité globale d'inondation": 0})
         cmap = LinearSegmentedColormap.from_list("risk", ["green","yellow","orange","red"])
         vmin, vmax = 0.0, 1.0
@@ -134,31 +138,25 @@ with col_map:
             if not rr.geometry.is_empty:
                 x, y = rr.geometry.centroid.coords[0]
                 ax.text(
-                    x, y, str(int(rr["Secteur"])), ha='center', va='center',
-                    fontsize=7, path_effects=[path_effects.withStroke(linewidth=1, foreground='white')]
+                    x, y, str(int(rr["Secteur"])), ha='center', va='center', fontsize=7,
+                    path_effects=[path_effects.withStroke(linewidth=1, foreground='white')]
                 )
-        # Annotation nord et échelle
-        sb = ScaleBar(
-            1, units="m", location='lower right', length_fraction=0.2, pad=-0.35,
-            box_color='white', box_alpha=0.7, font_properties={'size': 8}
-        )
+        # nord et échelle
+        sb = ScaleBar(1, units="m", location='lower right', length_fraction=0.2,
+                      pad=-0.35, box_color='white', box_alpha=0.7, font_properties={'size': 8})
         ax.add_artist(sb)
         bounds = gdf_plot.total_bounds
-        x_arrow, y_arrow = bounds[2] - 500, bounds[3] - 1000
-        ax.annotate(
-            'N', xy=(x_arrow, y_arrow), xytext=(x_arrow, y_arrow - 0.00005),
-            arrowprops=dict(facecolor='black', width=4, headwidth=10),
-            ha='center', va='center', fontsize=14, fontweight='bold'
-        )
-        ax.set_xticks([])
-        ax.set_yticks([])
-        # Confiance globale moyenne
+        x_arrow, y_arrow = bounds[2]-500, bounds[3]-1000
+        ax.annotate('N', xy=(x_arrow,y_arrow), xytext=(x_arrow,y_arrow-0.00005),
+                    arrowprops=dict(facecolor='black', width=4, headwidth=10),
+                    ha='center', va='center', fontsize=14, fontweight='bold')
+        ax.set_xticks([]); ax.set_yticks([])
+        # confiance globale moyenne
         conf_globale = df_full['Confiance_proxy'].mean()
-        ax.text(
-            0.01, 0.99, f"Niveau de confiance global(secteurs sélectionnés): {conf_globale:.3f}",
-            transform=ax.transAxes, ha='left', va='top', fontsize=10,
-            bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray')
-        )
+        ax.text(0.01, 0.99, f"Niveau de confiance global: {conf_globale:.3f}", transform=ax.transAxes,
+                ha='left', va='top', fontsize=10,
+                bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
+
         # Colorbar
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size="4%", pad=0.02)
@@ -166,9 +164,18 @@ with col_map:
         sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
         fig.colorbar(sm, cax=cax)
-        placeholder_map.pyplot(fig)
 
-        # Téléchargement CSV
+        # Affichage et téléchargement
+        col_map.pyplot(fig)
+        buf = BytesIO()
+        fig.savefig(buf, format='png', dpi=150)
+        buf.seek(0)
+        st.download_button(
+            "📷 Télécharger la carte",
+            data=buf,
+            file_name="carte_inondation.png",
+            mime="image/png"
+        )
         csv = df_full.drop(columns=['Prediction'], errors='ignore')
         st.download_button(
             "📅 Télécharger les résultats",
@@ -177,4 +184,4 @@ with col_map:
             mime='text/csv'
         )
     else:
-        st.info("Sélectionnez des secteurs et cliquez sur Calculer pour voir la carte.")
+        action_placeholder.info("Cliquez sur 'Calculer' pour générer les résultats et la carte.")
