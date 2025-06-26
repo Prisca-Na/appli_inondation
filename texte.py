@@ -110,8 +110,10 @@ with col_map:
             st.subheader("Résultats par secteur")
             for _, r in df_full.iterrows():
                 sec = int(r["Secteur"])
-                st.write(f"- Secteur {sec}: Prob={r['Probabilité globale d'inondation']:.3f}, Confiance={r['Confiance_proxy']:.3f}")
-
+                prob = r["Probabilité globale d'inondation"]
+                conf = r["Confiance_proxy"]
+                st.write(f"- Secteur {sec}: Prob={prob:.3f}, Confiance={conf:.3f}")
+        
         # Carte
         gdf_plot = gdf_sectors.merge(
             df_full[["Secteur","Probabilité globale d'inondation"]], on="Secteur", how="left"
@@ -140,7 +142,7 @@ with col_map:
         ax.set_xticks([]); ax.set_yticks([])
                 # Confiance globale moyenne
         conf_globale = df_full['Confiance_proxy'].mean()
-        ax.text(0.01, 0.99, f"Niveau de confiance global: {conf_globale:.3f}", transform=ax.transAxes,
+        ax.text(0.01, 0.99, f"Niveau de onfiance global: {conf_globale:.3f}", transform=ax.transAxes,
                 ha='left', va='top', fontsize=10, bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
         
         # Colorbar
