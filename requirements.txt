@@ -6,3 +6,6 @@ matplotlib
 numpy
 imbalanced-learn
 matplotlib-scalebar
+xgboost
+lightgbm
+scikit-learn
