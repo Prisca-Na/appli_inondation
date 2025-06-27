@@ -77,9 +77,11 @@ with col_inputs:
 
 
     secteurs_list = sorted(gdf_sectors['Secteur'].unique())
-    secteur_options = ["Ouagadougou_ville"] + ["Secteur :"] + [str(s) for s in secteurs_list]
+    secteur_options = ["Ouagadougou_ville"] + [str(s) for s in secteurs_list]
 
     selection = st.multiselect("Sélectionnez des secteurs :", options=secteur_options, default=[])
+
+    st.markdown("<span style='color:gray;font-weight:bold;'>Secteur :</span>", unsafe_allow_html=True)
 
     if not selection:
         st.warning("Veuillez sélectionner au moins un secteur.")
