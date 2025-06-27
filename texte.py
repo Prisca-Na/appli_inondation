@@ -22,7 +22,6 @@ st.set_page_config(
 Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
 path_shapefile = os.path.join(Prediction_inondation, "data", "Secteurs_Ouaga.shp")
 path_metadata = os.path.join(Prediction_inondation, "data", "donnee_statique.csv")
-path_dynamic = os.path.join(Prediction_inondation, "data", "donnee_dynamique.csv")
 path_modele = os.path.join(Prediction_inondation, "model_inondation.pkl")
 
 # --- Chargement du modèle bundle ---
@@ -48,21 +47,9 @@ def load_metadata():
     df.columns = df.columns.str.strip()
     return df
 
-# --- Chargement des données dynamiques ---
-@st.cache_data
-def load_dynamic():
-    df = pd.read_csv(path_dynamic, sep=';')
-    df.columns = df.columns.str.strip()
-    if 'Humidite_sol' not in df.columns:
-        raise KeyError("La colonne 'Humidite_sol' est absente des données dynamiques")
-    return df
 
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
-df_dynamic = load_dynamic()
-
-# Calcul de l'humidité moyenne historique pour valeur par défaut
-avg_humidity = df_dynamic['Humidite_sol'].mean()
 
 st.title("🌧️ Prévision des Inondations à Ouagadougou")
 
@@ -72,7 +59,7 @@ col_inputs, col_map = st.columns([1, 3])
 # --- Colonne de gauche: paramètres ---
 with col_inputs:
     st.subheader("Paramètres d'entrée")
-    precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 00.0, step=0.1)
+    precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 10.0, step=0.1)
     annee = st.number_input("Année", 1980, 2050, 2024)
     mois = st.selectbox("Mois", list(range(1, 13)), index=6)
     jour = st.selectbox("Jour", list(range(1, 32)), index=14)
@@ -91,13 +78,12 @@ with col_inputs:
     else:
         selected_secteurs = [int(s.split(" ")[1]) for s in selection if s.startswith("Secteur ")]
 
-    # Valeur par défaut de l'humidité = humidité moyenne historique
     humidites = {}
     for sec in selected_secteurs:
         humidites[sec] = st.slider(
             f"Humidité du sol du secteur {sec}",
             min_value=0.0, max_value=1.0,
-            value=float(avg_humidity), key=f"hum_{sec}"
+            value=0.5, key=f"hum_{sec}"
         )
 
 # --- Colonne de droite : bouton, carte, téléchargements ---
