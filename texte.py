@@ -64,19 +64,31 @@ with col_inputs:
     mois = st.selectbox("Mois", list(range(1, 13)), index=6)
     jour = st.selectbox("Jour", list(range(1, 32)), index=14)
 
-    secteurs_list = sorted(gdf_sectors["Secteur"].unique())
-    options = ["Ouagadougou_ville", "Secteur:"] + secteurs_list
-    selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
+    # secteurs_list = sorted(gdf_sectors["Secteur"].unique())
+    # options = ["Ouagadougou_ville", "Secteur:"] + secteurs_list
+    # selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
 
+    # if not selection:
+    #     st.warning("Veuillez sélectionner au moins un secteur.")
+    #     st.stop()
+
+    with st.expander("Sélection des secteurs", expanded=True):
+        secteurs_list = sorted(gdf_sectors['Secteur'].unique())
+        options = ["Ouagadougou_ville", "Secteur:"] + secteurs_list
+        selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
+    
+    # Construire liste effective sans le header
+    # selected_secteurs = secteurs_list if "Ouagadougou_ville" in selection else [s for s in selection if s != "Secteur:"]
+
+    # Validation et construction
     if not selection:
         st.warning("Veuillez sélectionner au moins un secteur.")
         st.stop()
+    selected = secteurs_list if "Ouagadougou_ville" in selection else [s for s in selection if s!="Secteur:"]
 
-    # Construire liste effective sans le header
-    selected_secteurs = secteurs_list if "Ouagadougou_ville" in selection else [s for s in selection if s != "Secteur:"]
 
     humidites = {}
-    for sec in selected_secteurs:
+    for sec in selected:
         humidites[sec] = st.slider(
             f"Humidité du sol du secteur {sec}",
             min_value=0.0, max_value=1.0,
@@ -86,7 +98,7 @@ with col_inputs:
 # --- Colonne de droite : bouton, carte, téléchargements ---
 with col_map:
     if st.button("Calculer la probabilité d'inondation"):
-        df_sel = pd.DataFrame({"Secteur": selected_secteurs})
+        df_sel = pd.DataFrame({"Secteur": selected})
         df_full = df_sel.merge(df_metadata, on="Secteur", how="left")
         df_full["Annee"] = annee
         df_full["Mois"] = mois
