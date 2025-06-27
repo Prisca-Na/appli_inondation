@@ -182,14 +182,13 @@ with col_map:
         # Affichage
         col_map.pyplot(fig)
 
-        # Expander sous la carte
-        with st.expander("Probabilité globale et niveau de confiance individuel", expanded=True):
+        # Expander sous la carte  
+        with st.expander("Probabilité globale et niveau de confiance individuel"):
             for _, r in df_full.iterrows():
-                st.write(
-                    f"Secteur {int(r['Secteur'])}: "
-                    f"Prob={r['Probabilité globale d'inondation']:.3f}, "
-                    f"Confiance={r['Confiance_proxy']:.3f}"
-                )
+                sector = int(r["Secteur"])
+                prob   = r["Probabilité globale d'inondation"]
+                conf   = r["Confiance_proxy"]
+                st.write(f"- Secteur {sector}: Prob={prob:.3f}, Confiance={conf:.3f}")
 
         # Téléchargements
         buf = BytesIO()
