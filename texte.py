@@ -22,6 +22,7 @@ st.set_page_config(
 Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
 path_shapefile = os.path.join(Prediction_inondation, "data", "Secteurs_Ouaga.shp")
 path_metadata = os.path.join(Prediction_inondation, "data", "donnee_statique.csv")
+path_dynamic = os.path.join(Prediction_inondation, "data", "donnees_dynamique.csv")
 path_modele = os.path.join(Prediction_inondation, "model_inondation.pkl")
 
 # --- Chargement du modèle bundle ---
@@ -47,11 +48,21 @@ def load_metadata():
     df.columns = df.columns.str.strip()
     return df
 
+# --- Chargement des données dynamiques ---
+@st.cache_data
+def load_dynamic():
+    df = pd.read_csv(path_dynamic, sep=';')
+    df.columns = df.columns.str.strip()
+    if 'Humidite_sol' not in df.columns:
+        raise KeyError("La colonne 'Humidite_sol' est absente des données dynamiques")
+    return df
+
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
+df_dynamic = load_dynamic()
 
-# Calcul de l'humidité moyenne pour valeur par défaut
-avg_humidity = df_metadata['Humidite_sol'].mean()
+# Calcul de l'humidité moyenne historique pour valeur par défaut
+avg_humidity = df_dynamic['Humidite_sol'].mean()
 
 st.title("🌧️ Prévision des Inondations à Ouagadougou")
 
