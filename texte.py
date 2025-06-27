@@ -143,23 +143,15 @@ with col_map:
                 )
 
         # Échelle et flèche nord
-        sb = ScaleBar(1, units="m", location='lower right',
-              length_fraction=0.2, pad=-0.35,
-              box_color='white', box_alpha=0.7,
-              font_properties={'size': 8})
-        ax.add_artist(sb)
-
-        # Flèche nord
+        ScaleBar(1, units="m", location="lower right").add_to(ax)
         bounds = gdf_plot.total_bounds
-        x_arrow = bounds[2] - 500
-        y_arrow = bounds[3] - 1000
         ax.annotate(
-            'N',
-            xy=(x_arrow, y_arrow),
-            xytext=(x_arrow, y_arrow - 0.00005),
+            'N', xy=(bounds[2] - 500, bounds[3] - 1000),
+            xytext=(bounds[2] - 500, bounds[3] - 1500),
             arrowprops=dict(facecolor='black', width=4, headwidth=10),
-            ha='center', va='center', fontsize=14, fontweight='bold', zorder=3
+            ha='center'
         )
+        ax.set_xticks([]); ax.set_yticks([])
 
         # Confiance globale
         cm = df_full["Confiance_proxy"].mean()
@@ -177,13 +169,13 @@ with col_map:
             cmap=cmap, norm=mpl.colors.Normalize(vmin=0, vmax=1)
         )
         sm.set_array([])
-        fig.colorbar(sm, cax=cax, orientation='vertical')
+        fig.colorbar(sm, cax=cax)
 
         # Affichage
         col_map.pyplot(fig)
 
-        # Expander sous la carte  
-        with st.expander("Probabilité globale et niveau de confiance individuel"):
+        # Expander sous la carte
+        with st.expander("Probabilité globale et Niveau de confiance individuel"):
             for _, r in df_full.iterrows():
                 sector = int(r["Secteur"])
                 prob   = r["Probabilité globale d'inondation"]
