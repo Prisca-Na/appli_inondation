@@ -22,7 +22,7 @@ st.set_page_config(
 Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
 path_shapefile = os.path.join(Prediction_inondation, "data", "Secteurs_Ouaga.shp")
 path_metadata = os.path.join(Prediction_inondation, "data", "donnee_statique.csv")
-path_dynamic = os.path.join(Prediction_inondation, "data", "donnees_dynamique.csv")
+path_dynamic = os.path.join(Prediction_inondation, "data", "donnee_dynamique.csv")
 path_modele = os.path.join(Prediction_inondation, "model_inondation.pkl")
 
 # --- Chargement du modèle bundle ---
