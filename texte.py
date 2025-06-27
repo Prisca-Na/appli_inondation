@@ -76,22 +76,22 @@ with col_inputs:
     # selected_secteurs = secteurs_list if "Ouagadougou_ville" in selection else [s for s in selection if s != "Secteur:"]
 
 
-    with st.expander("Sélection des secteurs", expanded=True):
-        secteurs_list = sorted(gdf_sectors['Secteur'].unique())
-        options = ["Ouagadougou_ville"] + secteurs_list
-        selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
-        st.markdown("**Secteur :**")
+    secteurs_list = sorted(gdf_sectors['Secteur'].unique())
+    secteur_options = ["Ouagadougou_ville"] + [str(s) for s in secteurs_list]
+
+    st.markdown("**Sélection des secteurs :**")
+    selection = st.multiselect("", options=secteur_options, default=[])
+    st.markdown("<span style='font-weight:bold;'>Secteur :</span>", unsafe_allow_html=True)
 
     # Validation de la sélection
     if not selection:
         st.warning("Veuillez sélectionner au moins un secteur.")
         st.stop()
 
-    # Construction de la liste effective
     if "Ouagadougou_ville" in selection:
         selected_secteurs = secteurs_list
     else:
-        selected_secteurs = [s for s in selection if s != "Ouagadougou_ville"]
+        selected_secteurs = [int(s) for s in selection if s.isdigit()]
 
     humidites = {}
     for sec in selected_secteurs:
