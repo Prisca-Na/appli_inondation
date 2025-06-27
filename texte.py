@@ -112,8 +112,6 @@ with col_map:
         cmap = LinearSegmentedColormap.from_list("risk", ["green", "yellow", "orange", "red"])
         fig, ax = plt.subplots(figsize=(8, 6))
         fig.subplots_adjust(left=0.05, right=0.98, bottom=0.12, top=0.92)
-        ax.set_axisbelow(True)
-        ax.grid(True, linestyle="--", linewidth=0.5, color="lightgray")
 
         gdf_plot.plot(
             column="Probabilité globale d'inondation", cmap=cmap,
@@ -152,6 +150,10 @@ with col_map:
         ax.text(0.01, -0.00, "Carte des probabilités d'inondation",
                 transform=ax.transAxes, ha="left", va="bottom",
                 fontsize=13, fontweight="bold")
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.grid(False)
 
         st.pyplot(fig)
 
