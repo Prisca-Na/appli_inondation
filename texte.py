@@ -65,14 +65,14 @@ with col_inputs:
     jour = st.selectbox("Jour", list(range(1, 32)), index=14)
 
     secteurs_list = sorted(gdf_sectors["Secteur"].unique())
-    options = ["Tous les secteurs"] + secteurs_list
+    options = ["Ouagadougou_ville"] + secteurs_list
     selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
 
     if not selection:
         st.warning("Veuillez sélectionner au moins un secteur.")
         st.stop()
 
-    selected_secteurs = secteurs_list if "Tous les secteurs" in selection else selection
+    selected_secteurs = secteurs_list if "Ouagadougou_ville" in selection else selection
 
     humidites = {}
     for sec in selected_secteurs:
