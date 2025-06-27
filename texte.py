@@ -47,9 +47,11 @@ def load_metadata():
     df.columns = df.columns.str.strip()
     return df
 
-
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
+
+# Calcul de l'humidité moyenne pour valeur par défaut
+avg_humidity = df_metadata['Humidite_sol'].mean()
 
 st.title("🌧️ Prévision des Inondations à Ouagadougou")
 
@@ -59,22 +61,10 @@ col_inputs, col_map = st.columns([1, 3])
 # --- Colonne de gauche: paramètres ---
 with col_inputs:
     st.subheader("Paramètres d'entrée")
-    precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 10.0, step=0.1)
+    precipitation = st.number_input("Précipitation (mm)", 0.0, 1000.0, 00.0, step=0.1)
     annee = st.number_input("Année", 1980, 2050, 2024)
     mois = st.selectbox("Mois", list(range(1, 13)), index=6)
     jour = st.selectbox("Jour", list(range(1, 32)), index=14)
-
-    # secteurs_list = sorted(gdf_sectors["Secteur"].unique())
-    # options = ["Ouagadougou_ville", "Secteur:"] + secteurs_list
-    # selection = st.multiselect("Sélectionnez des secteurs :", options, default=[])
-
-    # if not selection:
-    #     st.warning("Veuillez sélectionner au moins un secteur.")
-    #     st.stop()
-    
-    # # Construire liste effective sans le header
-    # selected_secteurs = secteurs_list if "Ouagadougou_ville" in selection else [s for s in selection if s != "Secteur:"]
-
 
     secteurs_list = sorted(gdf_sectors['Secteur'].unique())
     secteur_options = ["Ouagadougou_ville"] + [f"Secteur {s}" for s in secteurs_list]
@@ -90,12 +80,13 @@ with col_inputs:
     else:
         selected_secteurs = [int(s.split(" ")[1]) for s in selection if s.startswith("Secteur ")]
 
+    # Valeur par défaut de l'humidité = humidité moyenne historique
     humidites = {}
     for sec in selected_secteurs:
         humidites[sec] = st.slider(
             f"Humidité du sol du secteur {sec}",
             min_value=0.0, max_value=1.0,
-            value=0.5, key=f"hum_{sec}"
+            value=float(avg_humidity), key=f"hum_{sec}"
         )
 
 # --- Colonne de droite : bouton, carte, téléchargements ---
