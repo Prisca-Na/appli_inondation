@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 # ====== translations.json ======
 # Place this file in data/translations.json
 {
-  "French": {
+  "Fench": {
     "title": "🌧️ Prévision des Inondations à Ouagadougou",
     "precip": "Précipitation (mm)",
     "year": "Année",
@@ -56,7 +56,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
     "global_confidence": "Global confidence level: {cm:.3f}"
   }
 }
-
 
 # Load translations
 with open("data/translations.json", "r", encoding="utf-8") as f:
@@ -105,7 +104,6 @@ def load_metadata():
     df.columns = df.columns.str.strip()
     return df
 
-
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
 
@@ -116,7 +114,7 @@ col_inputs, col_map = st.columns([1, 3])
 # Input column
 with col_inputs:
     precipitation = st.number_input(
-        T['precip'], 0.0, 1000.0, 00.0, step=0.1
+        T['precip'], 0.0, 500.0, 00.0, step=0.1
     )
     year = st.number_input(T['year'], 1980, 2050, 2024)
     month = st.selectbox(T['month'], list(range(1, 13)), index=4)
@@ -161,7 +159,7 @@ with col_map:
             pipe.predict_proba(df_model)[:, 1]
             for pipe in pipelines_final.values()
         ])
-        df['Probabilité globale d'inondation'] = probs.mean(axis=1)
+        df["Probabilité globale d'inondation"] = probs.mean(axis=1)
         df['Confiance_proxy'] = 1 - probs.std(axis=1)
 
         # CSV export with rename
@@ -172,7 +170,7 @@ with col_map:
                 'Mois': 'Month', 'Jour': 'Day',
                 'Precipitation': 'Precipitation',
                 'Humidite_sol': 'Soil_humidity',
-                'Probabilité globale d'inondation': 'Global_flood_probability',
+                "Probabilité globale d'inondation": 'Global_flood_probability',
                 'Confiance_proxy': 'Confidence_proxy',
                 'Superficie_depotoir': 'Dump_area',
                 'Longueur_caniveau': 'Canal_length',
@@ -184,7 +182,7 @@ with col_map:
 
         # Plot map
         gdf_plot = gdf_sectors.merge(
-            df[['Secteur', 'Probabilité globale d'inondation']],
+            df[['Secteur', "Probabilité globale d'inondation"]],
             on='Secteur', how='left'
         ).fillna(0)
         cmap = LinearSegmentedColormap.from_list(
@@ -192,7 +190,7 @@ with col_map:
         )
         fig, ax = plt.subplots(figsize=(8, 6))
         gdf_plot.plot(
-            column='Probabilité globale d'inondation',
+            column="Probabilité globale d'inondation",
             cmap=cmap, linewidth=0.5, edgecolor='white',
             vmin=0, vmax=1, ax=ax, zorder=1
         )
@@ -240,7 +238,7 @@ with col_map:
                 st.write(
                     T['sector_line'].format(
                         sec=int(row['Secteur']),
-                        prob=row['Probabilité globale d'inondation'],
+                        prob=row["Probabilité globale d'inondation"],
                         conf=row['Confiance_proxy']
                     )
                 )
