@@ -132,7 +132,12 @@ col_names_translation = {
         "Mois": "Mois",
         "Jour": "Jour",
         "Precipitation": "Précipitation",
-        "Humidite_sol": "Humidité_sol"
+        "Humidite_sol": "Humidité_sol",
+        "Superficie_depotoir": "Superficie_depotoir",
+        "Longueur_caniveau": "Longueur_caniveau",
+        "Plan_eau": "Plan_eau",
+        "Type_sol": "Type_sol",
+        "Relief": "Relief"
     },
     "English": {
         "Secteur": "Sector",
@@ -142,7 +147,12 @@ col_names_translation = {
         "Mois": "Month",
         "Jour": "Day",
         "Precipitation": "Precipitation",
-        "Humidite_sol": "Soil humidity"
+        "Humidite_sol": "Soil humidity",
+        "Superficie_depotoir": "Dump area",
+        "Longueur_caniveau": "Gutter length",
+        "Plan_eau": "Water bodies",
+        "Type_sol": "Soil type",
+        "Relief": "Relief"
     }
 }
 
