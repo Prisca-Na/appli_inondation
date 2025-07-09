@@ -1,11 +1,6 @@
 streamlit
 pandas
 geopandas
-fiona
-pyproj
-shapely
-pillow
-rtree
 joblib
 matplotlib
 numpy
@@ -14,4 +9,3 @@ matplotlib-scalebar
 xgboost
 lightgbm
 scikit-learn
-pyyaml
