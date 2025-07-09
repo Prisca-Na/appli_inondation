@@ -87,7 +87,7 @@ trads = {
     },
     "soil_humidity": {
         "Français": "Humidité du sol du secteur",
-        "English": "Soil humidity of sector"
+        "English": "Soil moisture of sector"
     },
     "button_calculate": {
         "Français": "Calculer la probabilité d'inondation",
@@ -102,8 +102,8 @@ trads = {
         "English": "Missing columns:"
     },
     "map_title": {
-        "Français": "Carte des probabilités d'inondation",
-        "English": "Map of flood probabilities"
+        "Français": "Carte des probabilités d'inondation (%)",
+        "English": "Map of flood probabilities (%)"
     },
     "global_confidence": {
         "Français": "Niveau de confiance global",
@@ -147,7 +147,7 @@ col_names_translation = {
         "Mois": "Month",
         "Jour": "Day",
         "Precipitation": "Precipitation",
-        "Humidite_sol": "Soil humidity",
+        "Humidite_sol": "Soil moisture",
         "Superficie_depotoir": "Dump area",
         "Longueur_caniveau": "Gutter length",
         "Plan_eau": "Water bodies",
@@ -196,7 +196,7 @@ with col_inputs:
     humidites = {}
     for sec in selected_secteurs:
         humidites[sec] = st.slider(
-            f"{trads['soil_humidity'][langue]} {sec}",
+            f"{trads['soil_moisture'][langue]} {sec}",
             min_value=0.0, max_value=1.0,
             value=0.5, key=f"hum_{sec}"
         )
@@ -221,6 +221,8 @@ with col_map:
         arr = np.column_stack(probas)
         df_full["Probabilité globale d'inondation"] = arr.mean(axis=1)
         df_full["Confiance_proxy"] = 1 - np.std(arr, axis=1)
+        df_full["Probabilité globale d'inondation"] *= 100
+        df_full["Confiance_proxy"] *= 100
 
         # Préparation GeoDataFrame pour la carte
         gdf_plot = gdf_sectors.merge(
@@ -235,8 +237,11 @@ with col_map:
 
         gdf_plot.plot(
             column="Probabilité globale d'inondation", cmap=cmap,
-            linewidth=0.5, edgecolor="white", vmin=0, vmax=1, ax=ax, zorder=1
+            linewidth=0.5, edgecolor="white", vmin=0, vmax=100, ax=ax, zorder=1
         )
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=mpl.colors.Normalize(vmin=0, vmax=100))
+
+
 
         for _, rr in gdf_plot.iterrows():
             if not rr.geometry.is_empty:
@@ -257,9 +262,11 @@ with col_map:
                     ha='center', va='center', fontsize=14, fontweight='bold', zorder=3)
 
         cm = df_full["Confiance_proxy"].mean()
-        ax.text(0.01, 0.99, f"{trads['global_confidence'][langue]}: {cm:.3f}",
+        ax.text(0.01, 0.99, f"{trads['global_confidence'][langue]}: {cm:.1f} %",
                 transform=ax.transAxes, ha='left', va='top',
                 bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'))
+        
+
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='4%', pad=0.02)
@@ -279,15 +286,18 @@ with col_map:
 
         # Traduction colonnes avant affichage et export
         df_export = df_full.rename(columns=col_names_translation[langue])
-
+                
         with st.expander(trads["individual_confidence"][langue]):
             for _, r in df_export.iterrows():
                 sec = r[col_names_translation[langue]["Secteur"]]
                 prob = r[col_names_translation[langue]["Probabilité globale d'inondation"]]
                 conf = r[col_names_translation[langue]["Confiance_proxy"]]
-                st.write(f"- {('Secteur' if langue=='Français' else 'Sector')} {sec}: "
-                         f"Probability={prob:.3f}, Confidence={conf:.3f}" if langue == "English"
-                         else f"- Secteur {sec}: Probabilité={prob:.3f}, Confiance={conf:.3f}")
+
+                if langue == "Français":
+                    st.write(f"- Secteur {sec} : Probabilité = {prob:.1f} %, Confiance = {conf:.1f} %")
+                else:
+                    st.write(f"- Sector {sec}: Probability = {prob:.1f} %, Confidence = {conf:.1f} %")
+
 
         # Téléchargements
         buf = BytesIO()
