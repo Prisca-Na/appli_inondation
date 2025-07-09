@@ -1,6 +1,11 @@
 streamlit
 pandas
 geopandas
+fiona
+pyproj
+shapely
+pillow
+rtree
 joblib
 matplotlib
 numpy
