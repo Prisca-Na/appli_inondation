@@ -1,4 +1,3 @@
-# ====== app.py ======
 import streamlit as st
 import os
 import json
@@ -13,75 +12,32 @@ import matplotlib.patheffects as path_effects
 from matplotlib_scalebar.scalebar import ScaleBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-
-# ====== translations.json ======
-# Place this file in data/translations.json
-{
-  "Fench": {
-    "title": "🌧️ Prévision des Inondations à Ouagadougou",
-    "precip": "Précipitation (mm)",
-    "year": "Année",
-    "month": "Mois",
-    "day": "Jour",
-    "select_sectors": "Sélectionnez des secteurs :",
-    "all_sectors_label": "Ouagadougou_ville",
-    "warning_no_sector": "Veuillez sélectionner au moins un secteur.",
-    "humid_slider": "Humidité du sol du secteur {sec}",
-    "calc_button": "Calculer la probabilité d'inondation",
-    "info_click": "Cliquez sur 'Calculer' pour générer les résultats et la carte.",
-    "expander_title": "Probabilité globale et niveau de confiance individuel",
-    "download_map": "📷 Télécharger la carte",
-    "download_results": "🗅️ Télécharger les résultats",
-    "map_caption": "Carte des probabilités d'inondation",
-    "sector_line": "- Secteur {sec}: Probabilité={prob:.3f}, Confiance={conf:.3f}",
-    "global_confidence": "Niveau de confiance global : {cm:.3f}"
-  },
-  "English": {
-    "title": "🌧️ Flood Forecasting in Ouagadougou",
-    "precip": "Precipitation (mm)",
-    "year": "Year",
-    "month": "Month",
-    "day": "Day",
-    "select_sectors": "Select sectors:",
-    "all_sectors_label": "Ouagadougou_city",
-    "warning_no_sector": "Please select at least one sector.",
-    "humid_slider": "Soil humidity for sector {sec}",
-    "calc_button": "Compute flood probability",
-    "info_click": "Click 'Compute' to generate the results and map.",
-    "expander_title": "Global probability and individual confidence level",
-    "download_map": "📷 Download map",
-    "download_results": "🗅️ Download results",
-    "map_caption": "Flood probability map",
-    "sector_line": "- Sector {sec}: Probability={prob:.3f}, Confidence={conf:.3f}",
-    "global_confidence": "Global confidence level: {cm:.3f}"
-  }
-}
-
-# Load translations
-with open("data/translations.json", "r", encoding="utf-8") as f:
+# --- Chargement des traductions ---
+Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
+with open(os.path.join(Prediction_inondation, "data", "translations.json"), "r", encoding="utf-8") as f:
     LANGUAGES = json.load(f)
 
-# Streamlit config
+# --- Configuration Streamlit ---
 st.set_page_config(
     page_title="🌧️ Prévision des Inondations à Ouagadougou",
     layout="wide"
 )
 
-# Language selector
+# --- Sélecteur de langue ---
 lang = st.sidebar.selectbox(
     "Language / Langue",
-    options=list(LANGUAGES.keys()),
+    options=list(LANGUAGES.keys()),  
     index=0
 )
 T = LANGUAGES[lang]
 
-# Paths
+# --- Chemins vers fichiers ---
 Prediction_inondation = os.path.dirname(os.path.abspath(__file__))
 path_shp = os.path.join(Prediction_inondation, "data", "Secteurs_Ouaga.shp")
 path_meta = os.path.join(Prediction_inondation, "data", "donnee_statique.csv")
 path_model = os.path.join(Prediction_inondation, "model_inondation.pkl")
 
-# Load model bundle
+# --- Chargement du modèle ---
 @st.cache_data
 def load_model_bundle():
     bundle = joblib.load(path_model)
@@ -89,7 +45,7 @@ def load_model_bundle():
 
 pipelines_final, feature_order = load_model_bundle()
 
-# Load spatial & metadata
+# --- Chargement des données spatiales et métadonnées ---
 @st.cache_data
 def load_shapefile():
     gdf = gpd.read_file(path_shp)
@@ -107,14 +63,13 @@ def load_metadata():
 gdf_sectors = load_shapefile()
 df_metadata = load_metadata()
 
-# App UI
+# --- Interface utilisateur ---
 st.title(T['title'])
 col_inputs, col_map = st.columns([1, 3])
 
-# Input column
 with col_inputs:
     precipitation = st.number_input(
-        T['precip'], 0.0, 500.0, 00.0, step=0.1
+        T['precip'], 0.0, 500.0, 0.0, step=0.1
     )
     year = st.number_input(T['year'], 1980, 2050, 2024)
     month = st.selectbox(T['month'], list(range(1, 13)), index=4)
@@ -143,17 +98,16 @@ with col_inputs:
             value=0.5, key=f"hum_{s}"
         )
 
-# Map & results column
 with col_map:
     if st.button(T['calc_button']):
-        # Prepare DataFrame
+        # Préparation des données
         df = pd.DataFrame({'Secteur': sel_sectors})
         df = df.merge(df_metadata, on='Secteur', how='left')
         df['Annee'], df['Mois'], df['Jour'] = year, month, day
         df['Precipitation'] = precipitation
         df['Humidite_sol'] = df['Secteur'].map(humidities)
 
-        # Model prediction
+        # Prédiction
         df_model = df[feature_order]
         probs = np.column_stack([
             pipe.predict_proba(df_model)[:, 1]
@@ -162,9 +116,9 @@ with col_map:
         df["Probabilité globale d'inondation"] = probs.mean(axis=1)
         df['Confiance_proxy'] = 1 - probs.std(axis=1)
 
-        # CSV export with rename
+        # Préparation export CSV avec traduction colonnes si anglais
         df_export = df.copy()
-        if lang == 'English':
+        if lang == 'en':
             rename_map = {
                 'Secteur': 'Sector', 'Annee': 'Year',
                 'Mois': 'Month', 'Jour': 'Day',
@@ -180,7 +134,7 @@ with col_map:
             }
             df_export.rename(columns=rename_map, inplace=True)
 
-        # Plot map
+        # Carte
         gdf_plot = gdf_sectors.merge(
             df[['Secteur', "Probabilité globale d'inondation"]],
             on='Secteur', how='left'
@@ -232,7 +186,7 @@ with col_map:
         ax.set_axis_off()
         st.pyplot(fig)
 
-        # Expander details
+        # Détails dans expander
         with st.expander(T['expander_title']):
             for _, row in df.iterrows():
                 st.write(
@@ -243,7 +197,7 @@ with col_map:
                     )
                 )
 
-        # Downloads
+        # Téléchargements
         buf = BytesIO()
         fig.savefig(buf, format='png', dpi=150)
         buf.seek(0)
