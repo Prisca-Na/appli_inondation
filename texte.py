@@ -85,7 +85,7 @@ trads = {
         "Français": "Veuillez sélectionner au moins un secteur.",
         "English": "Please select at least one sector."
     },
-    "soil_humidity": {
+    "soil_moisture": {
         "Français": "Humidité du sol du secteur",
         "English": "Soil moisture of sector"
     },
