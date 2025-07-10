@@ -11,6 +11,7 @@ from io import BytesIO
 import matplotlib.patheffects as path_effects
 from matplotlib_scalebar.scalebar import ScaleBar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib import ticker
 
 # --- Config page ---
 st.set_page_config(
@@ -270,9 +271,10 @@ with col_map:
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes('right', size='4%', pad=0.02)
-        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=mpl.colors.Normalize(vmin=0, vmax=1))
+        sm = mpl.cm.ScalarMappable(cmap=cmap, norm=mpl.colors.Normalize(vmin=0, vmax=100))
         sm.set_array([])
-        fig.colorbar(sm, cax=cax, orientation='vertical')
+        cbar = fig.colorbar(sm, cax=cax, orientation='vertical', label='%')
+        cbar.ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=100, decimals=0, symbol='%'))
 
         ax.text(0.01, -0.00, trads["map_title"][langue],
                 transform=ax.transAxes, ha='left', va='bottom',
