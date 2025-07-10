@@ -273,7 +273,7 @@ with col_map:
         cax = divider.append_axes('right', size='4%', pad=0.02)
         sm = mpl.cm.ScalarMappable(cmap=cmap, norm=mpl.colors.Normalize(vmin=0, vmax=100))
         sm.set_array([])
-        cbar = fig.colorbar(sm, cax=cax, orientation='vertical', label='%')
+        cbar = fig.colorbar(sm, cax=cax, orientation='vertical')
         cbar.ax.yaxis.set_major_formatter(ticker.PercentFormatter(xmax=100, decimals=0, symbol='%'))
 
         ax.text(0.01, -0.00, trads["map_title"][langue],
